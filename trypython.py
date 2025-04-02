@@ -109,13 +109,13 @@ models = {
     "XGBoost": XGBClassifier(
         use_label_encoder=False, 
         eval_metric='logloss', 
-        subsample=1.0, 
-        n_estimators=200, 
-        min_child_weight=1, 
-        max_depth=5, 
-        learning_rate=0.2, 
-        gamma=0.2, 
-        colsample_bytree=1.0
+        subsample=0.8, 
+        n_estimators=1000, 
+        min_child_weight=4, 
+        max_depth=8, 
+        learning_rate=0.1, 
+        gamma=0.1, 
+        colsample_bytree=0.9
     ),
     "LightGBM": LGBMClassifier(),
     "SVM": SVC(),
@@ -176,6 +176,8 @@ print("Optimized Random Forest Accuracy:", accuracy_score(y_val, y_pred))
 print("Best Parameters:", random_search.best_params_)'
 '''
 
+'''
+
 xg_model = xgb.XGBClassifier(random_state=42)
 
 # Define the parameter grid for RandomizedSearchCV
@@ -195,3 +197,126 @@ random_search.fit(X_train, y_train)
 
 # Get the best parameters and model
 print("Best parameters found:", random_search.best_params_)
+'
+'''
+
+'''
+
+import time
+import numpy as np
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import accuracy_score
+from xgboost import XGBClassifier
+
+# Define XGBoost parameter search space
+xgb_params = {
+    "n_estimators": [100, 300, 500],
+    "learning_rate": [0.01, 0.1, 0.2],
+    "max_depth": [3, 5, 7, 10],
+    "min_child_weight": [1, 3, 5],
+    "subsample": [0.8, 0.9, 1.0],
+    "colsample_bytree": [0.8, 0.9, 1.0],
+    "gamma": [0, 0.1, 0.2, 0.3]
+}
+
+# Initialize XGBoost model
+xgb_model = XGBClassifier(random_state=42, eval_metric="logloss", use_label_encoder=False)
+
+# Perform RandomizedSearchCV
+xgb_search = RandomizedSearchCV(
+    xgb_model, param_distributions=xgb_params, n_iter=20, scoring="accuracy",
+    cv=3, random_state=42, verbose=2, n_jobs=-1
+)
+
+# Start timer
+start_time = time.time()
+
+# Fit the model to find the best parameters
+xgb_search.fit(X_train, y_train)
+
+# End timer
+end_time = time.time()
+elapsed_time = end_time - start_time
+
+# Best model
+best_xgb = xgb_search.best_estimator_
+best_xgb_params = xgb_search.best_params_
+
+# Evaluate on validation set
+y_pred_xgb = best_xgb.predict(X_val)
+xgb_accuracy = accuracy_score(y_val, y_pred_xgb)
+
+# Print results
+print("\n🎯 Final Best Parameters Found:")
+print(best_xgb_params)
+print(f"\n🚀 Optimized XGBoost Accuracy: {xgb_accuracy:.4f}")
+print(f"\n⏳ Time Taken: {elapsed_time:.2f} seconds")
+
+'''
+
+
+
+
+
+
+
+
+
+import xgboost as xgb
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import time
+
+# Charger les données à partir de ton fichier train_df
+X = train_df[features]
+y = train_df['bc_price_evo']
+
+# Séparer les données en train/test
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Définir l'espace de recherche des hyperparamètres pour XGBoost
+xgb_params = {
+    "n_estimators": [500, 700, 1000, 1200],  # Nombre plus élevé d'arbres
+    "learning_rate": [0.01, 0.05, 0.1, 0.15],  # Valeur plus basse pour éviter l'overfitting
+    "max_depth": [6, 8, 10, 12],  # Plus grande profondeur des arbres
+    "min_child_weight": [2, 3, 4, 5],  # Poids des enfants plus larges
+    "subsample": [0.75, 0.8, 0.85, 0.9, 1.0],  # Différentes fractions d'échantillons
+    "colsample_bytree": [0.8, 0.85, 0.9, 1.0],  # Pourcentage de caractéristiques
+    "gamma": [0, 0.1, 0.2, 0.3],  # Plus de variations pour la régularisation
+}
+
+# Initialiser le modèle XGBoost
+xgb_model = xgb.XGBClassifier(eval_metric="logloss", use_label_encoder=False, random_state=42)
+
+# RandomizedSearchCV pour trouver les meilleurs hyperparamètres
+xgb_search = RandomizedSearchCV(
+    xgb_model, param_distributions=xgb_params, n_iter=50, scoring="accuracy",  # Plus d'itérations pour explorer davantage
+    cv=5, random_state=42, verbose=2, n_jobs=-1
+)
+
+# Démarrer le chronomètre
+start_time = time.time()
+
+# Entraîner le modèle
+xgb_search.fit(X_train, y_train)
+
+# Temps écoulé
+end_time = time.time()
+elapsed_time = end_time - start_time
+
+# Meilleurs paramètres obtenus
+best_xgb_params = xgb_search.best_params_
+
+# Meilleur modèle
+best_xgb = xgb_search.best_estimator_
+
+# Prédictions et évaluation
+y_pred_xgb = best_xgb.predict(X_test)
+xgb_accuracy = accuracy_score(y_test, y_pred_xgb)
+
+# Imprimer les résultats
+print("\n🎯 Meilleurs paramètres obtenus:")
+print(best_xgb_params)
+print(f"\n🚀 Accuracy optimisée de XGBoost: {xgb_accuracy:.4f}")
+print(f"\n⏳ Temps écoulé: {elapsed_time:.2f} secondes")
