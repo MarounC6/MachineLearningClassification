@@ -97,11 +97,11 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_st
 models = {
     "Logistic Regression": LogisticRegression(max_iter=500),
     "Random Forest": RandomForestClassifier(
-        n_estimators=500, 
-        min_samples_split=5, 
+        n_estimators=450, 
+        min_samples_split=2, 
         min_samples_leaf=1, 
         max_features=None, 
-        max_depth=30, 
+        max_depth=25, 
         bootstrap=True, 
         random_state=42
     ),
@@ -109,13 +109,13 @@ models = {
     "XGBoost": XGBClassifier(
         use_label_encoder=False, 
         eval_metric='logloss', 
-        subsample=0.8, 
-        n_estimators=1000, 
-        min_child_weight=4, 
-        max_depth=8, 
+        subsample=0.95, 
+        n_estimators=1500, 
+        min_child_weight=1, 
+        max_depth=15, 
         learning_rate=0.1, 
         gamma=0.1, 
-        colsample_bytree=0.9
+        colsample_bytree=1.0
     ),
     "LightGBM": LGBMClassifier(),
     "SVM": SVC(),
@@ -150,20 +150,24 @@ for name, acc in sorted(accuracies.items(), key=lambda x: x[1], reverse=True):
     print(f"{name}: {acc:.4f}")
 
 print(f"\nBest Model: {best_model_name} with Accuracy: {accuracies[best_model_name]:.4f}")
-'''
+
+
+
+
 # Define parameter grid
 param_dist = {
-    'n_estimators': [100, 300, 500, 700, 1000],
-    'max_depth': [10, 20, 30, 50, None],
-    'min_samples_split': [2, 5, 10],
-    'min_samples_leaf': [1, 2, 4],
-    'max_features': ['sqrt', 'log2', None],
-    'bootstrap': [True, False]
+    'n_estimators': [425, 450,475],
+    'max_depth': [23, 25, 27],
+    'min_samples_split': [2, 12],
+    'min_samples_leaf': [1],
+    'max_features': [None],
+    #'max_features': ['sqrt', 'log2', None],
+    'bootstrap': [True],
 }
 
 rf = RandomForestClassifier(random_state=42)
 random_search = RandomizedSearchCV(
-    rf, param_distributions=param_dist, n_iter=50, cv=5, 
+    rf, param_distributions=param_dist, n_iter=50, cv=2, 
     scoring='accuracy', n_jobs=-1, verbose=2, random_state=42
 )
 
@@ -173,8 +177,10 @@ best_rf = random_search.best_estimator_
 # Evaluate on validation set
 y_pred = best_rf.predict(X_val)
 print("Optimized Random Forest Accuracy:", accuracy_score(y_val, y_pred))
-print("Best Parameters:", random_search.best_params_)'
-'''
+print("Best Parameters:", random_search.best_params_)
+
+
+
 
 '''
 
@@ -200,8 +206,8 @@ print("Best parameters found:", random_search.best_params_)
 '
 '''
 
-'''
 
+'''
 import time
 import numpy as np
 from sklearn.model_selection import RandomizedSearchCV
@@ -210,13 +216,15 @@ from xgboost import XGBClassifier
 
 # Define XGBoost parameter search space
 xgb_params = {
-    "n_estimators": [100, 300, 500],
-    "learning_rate": [0.01, 0.1, 0.2],
-    "max_depth": [3, 5, 7, 10],
-    "min_child_weight": [1, 3, 5],
-    "subsample": [0.8, 0.9, 1.0],
-    "colsample_bytree": [0.8, 0.9, 1.0],
-    "gamma": [0, 0.1, 0.2, 0.3]
+    "n_estimators": [300, 350, 400, 450],
+    "learning_rate": [0.1, 0.15, 0.2, 0.25],
+    "max_depth": [6, 7, 8, 9],
+    "min_child_weight": [1, 2, 3, 4],
+    "subsample": [0.8, 0.85, 0.9],
+    "colsample_bytree": [0.9, 1.0],
+    "gamma": [0.3, 0.35, 0.4, 0.45],
+    "reg_alpha": [0, 0.1, 0.5],
+    "reg_lambda": [1, 1.5, 2],
 }
 
 # Initialize XGBoost model
@@ -224,8 +232,8 @@ xgb_model = XGBClassifier(random_state=42, eval_metric="logloss", use_label_enco
 
 # Perform RandomizedSearchCV
 xgb_search = RandomizedSearchCV(
-    xgb_model, param_distributions=xgb_params, n_iter=20, scoring="accuracy",
-    cv=3, random_state=42, verbose=2, n_jobs=-1
+    xgb_model, param_distributions=xgb_params, n_iter=100, scoring="accuracy",
+    cv=4, random_state=42, verbose=2, n_jobs=-1
 )
 
 # Start timer
@@ -262,61 +270,73 @@ print(f"\n⏳ Time Taken: {elapsed_time:.2f} seconds")
 
 
 
-import xgboost as xgb
+
+
+
+
+
+
+
+
+
+
+
+
+'''
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-import time
+import pandas as pd
 
-# Charger les données à partir de ton fichier train_df
-X = train_df[features]
-y = train_df['bc_price_evo']
-
-# Séparer les données en train/test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Définir l'espace de recherche des hyperparamètres pour XGBoost
-xgb_params = {
-    "n_estimators": [500, 700, 1000, 1200],  # Nombre plus élevé d'arbres
-    "learning_rate": [0.01, 0.05, 0.1, 0.15],  # Valeur plus basse pour éviter l'overfitting
-    "max_depth": [6, 8, 10, 12],  # Plus grande profondeur des arbres
-    "min_child_weight": [2, 3, 4, 5],  # Poids des enfants plus larges
-    "subsample": [0.75, 0.8, 0.85, 0.9, 1.0],  # Différentes fractions d'échantillons
-    "colsample_bytree": [0.8, 0.85, 0.9, 1.0],  # Pourcentage de caractéristiques
-    "gamma": [0, 0.1, 0.2, 0.3],  # Plus de variations pour la régularisation
+# Define parameter grid for Random Forest
+rf_params = {
+    'n_estimators': [100, 300, 500, 700, 1000],
+    'max_depth': [10, 20, 30, 50, None],
+    'min_samples_split': [2, 5, 10],
+    'min_samples_leaf': [1, 2, 4],
+    'max_features': ['sqrt', 'log2', None],
+    'bootstrap': [True, False]
 }
 
-# Initialiser le modèle XGBoost
-xgb_model = xgb.XGBClassifier(eval_metric="logloss", use_label_encoder=False, random_state=42)
+# Initialize Random Forest model
+rf_model = RandomForestClassifier(random_state=42)
 
-# RandomizedSearchCV pour trouver les meilleurs hyperparamètres
-xgb_search = RandomizedSearchCV(
-    xgb_model, param_distributions=xgb_params, n_iter=50, scoring="accuracy",  # Plus d'itérations pour explorer davantage
-    cv=5, random_state=42, verbose=2, n_jobs=-1
+# Initialize RandomizedSearchCV
+random_search_rf = RandomizedSearchCV(
+    estimator=rf_model,
+    param_distributions=rf_params,
+    n_iter=50,  # Number of parameter settings sampled
+    cv=3,  # 5-fold cross-validation
+    scoring='accuracy',
+    random_state=42,
+    n_jobs=-1,
+    verbose=2
 )
 
-# Démarrer le chronomètre
-start_time = time.time()
+# Fit RandomizedSearchCV
+random_search_rf.fit(X_train, y_train)
 
-# Entraîner le modèle
-xgb_search.fit(X_train, y_train)
+# Get the best model and parameters
+best_rf_model = random_search_rf.best_estimator_
+best_rf_params = random_search_rf.best_params_
+best_rf_accuracy = random_search_rf.best_score_
 
-# Temps écoulé
-end_time = time.time()
-elapsed_time = end_time - start_time
+# Print the best parameters and accuracy
+print("\n🎯 Best Parameters Found for Random Forest:")
+print(best_rf_params)
+print(f"\n🚀 Random Forest Cross-Validation Accuracy: {best_rf_accuracy:.4f}")
 
-# Meilleurs paramètres obtenus
-best_xgb_params = xgb_search.best_params_
+# Evaluate the best model on the validation set
+y_pred_rf = best_rf_model.predict(X_val)
+val_rf_accuracy = accuracy_score(y_val, y_pred_rf)
+print(f"\n✅ Random Forest Validation Accuracy: {val_rf_accuracy:.4f}")
 
-# Meilleur modèle
-best_xgb = xgb_search.best_estimator_
+# Generate predictions for the test set
+test_preds_rf = best_rf_model.predict(test_df[features])
 
-# Prédictions et évaluation
-y_pred_xgb = best_xgb.predict(X_test)
-xgb_accuracy = accuracy_score(y_test, y_pred_xgb)
+# Save submission file
+submission_rf = pd.DataFrame({'id': test_df['id'], 'bc_price_evo': ['UP' if p == 1 else 'DOWN' for p in test_preds_rf]})
+submission_rf.to_csv("submission_rf.csv", index=False)
 
-# Imprimer les résultats
-print("\n🎯 Meilleurs paramètres obtenus:")
-print(best_xgb_params)
-print(f"\n🚀 Accuracy optimisée de XGBoost: {xgb_accuracy:.4f}")
-print(f"\n⏳ Temps écoulé: {elapsed_time:.2f} secondes")
+
+'''
