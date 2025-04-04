@@ -97,11 +97,11 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_st
 models = {
     "Logistic Regression": LogisticRegression(max_iter=500),
     "Random Forest": RandomForestClassifier(
-        n_estimators=450, 
+        n_estimators=460, 
         min_samples_split=2, 
         min_samples_leaf=1, 
         max_features=None, 
-        max_depth=25, 
+        max_depth=24, 
         bootstrap=True, 
         random_state=42
     ),
@@ -156,18 +156,17 @@ print(f"\nBest Model: {best_model_name} with Accuracy: {accuracies[best_model_na
 
 # Define parameter grid
 param_dist = {
-    'n_estimators': [425, 450,475],
-    'max_depth': [23, 25, 27],
-    'min_samples_split': [2, 12],
-    'min_samples_leaf': [1],
-    'max_features': [None],
-    #'max_features': ['sqrt', 'log2', None],
+    'n_estimators': [440, 450, 460, 470, 480],
+    'max_depth': [22, 23, 24, 25, 26],
+    'min_samples_split': [2, 3, 4],
+    'min_samples_leaf': [1, 2],
+    'max_features': [None, 'sqrt', 'log2'],
     'bootstrap': [True],
 }
 
 rf = RandomForestClassifier(random_state=42)
 random_search = RandomizedSearchCV(
-    rf, param_distributions=param_dist, n_iter=50, cv=2, 
+    rf, param_distributions=param_dist, n_iter=75, cv=2, 
     scoring='accuracy', n_jobs=-1, verbose=2, random_state=42
 )
 

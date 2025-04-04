@@ -1,0 +1,27 @@
+Files
+
+    train.csv - the training set
+    test.csv - the test set (which does not contain any reference data for the evolution of the prices in British Columbia)
+    sample_submission.csv - a sample submission file in the correct format (values for the predicted evolution are random, this file is just an illustration of what format you should use when uploading!)
+
+Columns
+
+    id - Unique identifier used by Kaggle
+    date - Date at which the measurement was made, between the 15th of May 2015 and the 13th of December 2017 (normalized between 0 and 1)
+    hour - Hour of measurement as a half hour period of time over 24 hours (values originally between 0 and 47, here normalized between 0 and 1)
+    bc_price - Electricity price in British Columbia (normalized between 0 and 1)
+    bc_demand - Electricity demand in British Columbia (normalized between 0 and 1)
+    ab_price - Electricity price in Alberta (normalized between 0 and 1)
+    ab_demand - Electricity demand in Alberta (normalized between 0 and 1)
+    transfer - Electricity transfer scheduled between British Columbia and Alberta (normalized between 0 and 1)
+    bc_price_evo - Is the price in British Columbia going UP or DOWN compared to the last 24 hours? This is the target variable (i.e., it is only given during training)
+
+
+
+Description
+Evaluation
+
+Submissions are evaluated using the Accuracy Score between the predicted state of electricity price and the actual values (i.e., the percentage of correct answers).
+Submission File
+
+For each id in the test set, you must predict whether the price is going UP or DOWN for the bc_price_evo variable. The file should contain a header and have the following format:
