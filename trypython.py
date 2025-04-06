@@ -172,7 +172,8 @@ y_pred = best_rf.predict(X_val)
 print("Optimized Random Forest Accuracy:", accuracy_score(y_val, y_pred))
 print("Best Parameters:", random_search.best_params_)
 
-
+#Optimized Random Forest Accuracy: 0.9008837289897764
+#Best Parameters: {'random_state': 42, 'n_estimators': 500, 'min_samples_split': 5, 'min_samples_leaf': 1, 'max_features': None, 'max_depth': None, 'criterion': 'entropy'}
 
 '''
 
