@@ -96,15 +96,8 @@ X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_st
 # Define different models
 models = {
     "Logistic Regression": LogisticRegression(max_iter=500),
-    "Random Forest": RandomForestClassifier(
-        n_estimators=460, 
-        min_samples_split=2, 
-        min_samples_leaf=1, 
-        max_features=None, 
-        max_depth=24, 
-        bootstrap=True, 
-        random_state=42
-    ),
+    #"Random Forest": RandomForestClassifier(n_estimators=460, min_samples_split=2, min_samples_leaf=1, max_features=None, max_depth=24, bootstrap=True, random_state=42),
+    "Random Forest": RandomForestClassifier(n_estimators=500,  criterion='entropy', max_depth=None, min_samples_split=2, min_samples_leaf=1, max_features=None, random_state=0 ),
     "Gradient Boosting": GradientBoostingClassifier(n_estimators=100, random_state=42),
     "XGBoost": XGBClassifier(
         use_label_encoder=False, 
@@ -156,17 +149,18 @@ print(f"\nBest Model: {best_model_name} with Accuracy: {accuracies[best_model_na
 
 # Define parameter grid
 param_dist = {
-    'n_estimators': [440, 450, 460, 470, 480],
-    'max_depth': [22, 23, 24, 25, 26],
-    'min_samples_split': [2, 3, 4],
+    'n_estimators': [400, 500, 600],
+    'criterion': ['gini', 'entropy'],
+    'max_depth': [10, None],
+    'min_samples_split': [2, 5],
     'min_samples_leaf': [1, 2],
-    'max_features': [None, 'sqrt', 'log2'],
-    'bootstrap': [True],
+    'max_features': ['sqrt', None],
+    'random_state': [0, 42],
 }
 
 rf = RandomForestClassifier(random_state=42)
 random_search = RandomizedSearchCV(
-    rf, param_distributions=param_dist, n_iter=75, cv=2, 
+    rf, param_distributions=param_dist, n_iter=200, cv=3, 
     scoring='accuracy', n_jobs=-1, verbose=2, random_state=42
 )
 
@@ -177,7 +171,6 @@ best_rf = random_search.best_estimator_
 y_pred = best_rf.predict(X_val)
 print("Optimized Random Forest Accuracy:", accuracy_score(y_val, y_pred))
 print("Best Parameters:", random_search.best_params_)
-
 
 
 
@@ -338,4 +331,66 @@ submission_rf = pd.DataFrame({'id': test_df['id'], 'bc_price_evo': ['UP' if p ==
 submission_rf.to_csv("submission_rf.csv", index=False)
 
 
+'''
+'''
+import time
+import numpy as np
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import accuracy_score
+from xgboost import XGBClassifier
+
+# Define XGBoost parameter search space
+xgb_params = {
+    "n_estimators": [300, 350, 400, 450],
+    "learning_rate": [0.1, 0.15, 0.2, 0.25],
+    "max_depth": [6, 7, 8, 9],
+    "min_child_weight": [1, 2, 3, 4],
+    "subsample": [0.8, 0.85, 0.9],
+    "colsample_bytree": [0.9, 1.0],
+    "gamma": [0.3, 0.35, 0.4, 0.45],
+    "reg_alpha": [0, 0.1, 0.5],
+    "reg_lambda": [1, 1.5, 2],
+}
+
+# Initialize XGBoost model
+xgb_model = XGBClassifier(random_state=42, eval_metric="logloss", use_label_encoder=False)
+
+# Perform RandomizedSearchCV
+xgb_search = RandomizedSearchCV(
+    xgb_model, param_distributions=xgb_params, n_iter=100, scoring="accuracy",
+    cv=2, random_state=42, verbose=2, n_jobs=-1
+)
+
+# Start timer
+start_time = time.time()
+
+# Fit the model to find the best parameters with early stopping
+for train_idx, val_idx in StratifiedKFold(n_splits=2, shuffle=True, random_state=42).split(X_train, y_train):
+    X_train_fold, X_val_fold = X_train.iloc[train_idx], X_train.iloc[val_idx]
+    y_train_fold, y_val_fold = y_train.iloc[train_idx], y_train.iloc[val_idx]
+    xgb_model.fit(
+        X_train_fold, y_train_fold,
+        eval_set=[(X_val_fold, y_val_fold)],
+        early_stopping_rounds=10,
+        verbose=False
+    )
+xgb_search.fit(X_train, y_train)
+
+# End timer
+end_time = time.time()
+elapsed_time = end_time - start_time
+
+# Best model
+best_xgb = xgb_search.best_estimator_
+best_xgb_params = xgb_search.best_params_
+
+# Evaluate on validation set
+y_pred_xgb = best_xgb.predict(X_val)
+xgb_accuracy = accuracy_score(y_val, y_pred_xgb)
+
+# Print results
+print("\n🎯 Final Best Parameters Found:")
+print(best_xgb_params)
+print(f"\n🚀 Optimized XGBoost Accuracy: {xgb_accuracy:.4f}")
+print(f"\n⏳ Time Taken: {elapsed_time:.2f} seconds")
 '''
