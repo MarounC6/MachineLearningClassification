@@ -160,7 +160,7 @@ param_dist = {
 
 rf = RandomForestClassifier(random_state=42)
 random_search = RandomizedSearchCV(
-    rf, param_distributions=param_dist, n_iter=200, cv=3, 
+    rf, param_distributions=param_dist, n_iter=20, cv=2, 
     scoring='accuracy', n_jobs=-1, verbose=2, random_state=42
 )
 
